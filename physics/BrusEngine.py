@@ -36,26 +36,22 @@ class BrusEngine(Cell):
         """
         super(BrusEngine, self).__init__()
         
-        # Material constants
+        # Material properties
         self.bandgap = bandgap
         self.alpha = alpha
         self.beta = beta
+        self.me_eff = me_eff
+        self.mh_eff = mh_eff
         self.eps_r = eps_r
         self.max_absorption_coefficient = max_absorption_coefficient
         
-        # Physical Constants (Standard International Units)
-        self.m0 = 9.109e-31                  # Electron rest mass [kg]
-        self._reduced_plank = 1.05457e-34    # Reduced Planck's constant (hbar) [J·s]
-        self.elementary_charge = 1.602e-19   # Elementary charge (q) [C]
-        self.vacuum_permittivity = 8.854e-12 # Epsilon 0 [F/m]
-        self.pi = ms.numpy.pi                # Pi constant
-        self.plank_constant = 6.626e-34      # Planck's constant (h) [J·s]
-        self.light_speed = 2.9979e8          # Speed of light (c) [m/s]
+        # Pre-scaled physical constants (optimized for eV and nm units)
+        # Avoids numerical underflow in float32 operations
+        self.BRUS_CONST = 0.3760   # Confinement constant: h^2 / (8*m0) in [eV·nm^2]
+        self.COUL_CONST = 2.5682   # Coulomb constant: 1.786*q / (4*pi*eps0) in [eV·nm]
         
-        # Derived material properties
-        self.me_eff = me_eff * self.m0       # Effective electron mass [kg]
-        self.mh_eff = mh_eff * self.m0       # Effective hole mass [kg]
-        self.sigma = 10                      # Standard deviation for Gaussian broadening [nm]
+        # Gaussian broadening parameter
+        self.sigma = 10  # Standard deviation for absorption profile [nm]
 
     def construct(self, temperature: float, radius: float, wavelengths: ms.Tensor) -> ms.Tensor:
         """
@@ -70,29 +66,23 @@ class BrusEngine(Cell):
             ms.Tensor: Absorption coefficient profile [m^-1] for the given wavelength range.
         """
         
-        # 1. Varshni's Law: Adjust bulk bandgap based on temperature
+        # 1. Varshni's Law: Temperature-dependent bandgap correction
         # Formula: Eg(T) = E0 - (alpha * T^2) / (T + beta)
         e_bulk = self.bandgap - (self.alpha * ops.pow(temperature, 2)) / (temperature + self.beta)
 
-        # 2. Brus Equation: Add Quantum Confinement and Coulomb interaction
-        # Note: radius is converted from [nm] to [m] using 1e-9.
-        # The Brus terms (Joules) are divided by elementary_charge to convert to [eV].
-        confinement_term = (ops.pow(self._reduced_plank * self.pi, 2)) / \
-                           (2 * ops.pow(radius * 1e-9, 2)) * (1/self.me_eff + 1/self.mh_eff)
+        # 2. Brus Equation: Quantum confinement and Coulomb interaction (in eV and nm)
+        confinement = (self.BRUS_CONST / ops.pow(radius, 2)) * (1/self.me_eff + 1/self.mh_eff)
         
-        coulomb_term = (1.786 * ops.pow(self.elementary_charge, 2)) / \
-                       (4 * self.pi * self.vacuum_permittivity * self.eps_r * radius * 1e-9)
+        # Coulomb term: decreases energy gap due to electron-hole attraction
+        coulomb = self.COUL_CONST / (self.eps_r * radius)
         
-        # Total Energy Gap of the Quantum Dot [eV]
-        e_qd = e_bulk + (confinement_term - coulomb_term) / self.elementary_charge
+        # Total quantum dot energy gap [eV]
+        e_qd = e_bulk + confinement - coulomb
 
-        # 3. Spectral Conversion: Find peak resonance wavelength [nm]
-        # Formula: lambda = (h * c) / Energy
-        wavelength_peak = (self.plank_constant * self.light_speed) / \
-                          (e_qd * self.elementary_charge) * 1e9 
+        # 3. Energy-to-Wavelength conversion: Peak absorption wavelength [nm]
+        wavelength_peak = 1239.84 / e_qd
 
-        # 4. Gaussian Absorption Profile: Model the polydispersity of QDs
-        # Computes the absorption coefficient for the entire wavelength tensor.
+        # 4. Gaussian absorption profile: Models size distribution effects
         absorption_coefficient = self.max_absorption_coefficient * ms.numpy.exp(
             -ops.pow((wavelengths - wavelength_peak), 2) / (2 * ops.pow(self.sigma, 2))
         )
