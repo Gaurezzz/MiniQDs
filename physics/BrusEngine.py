@@ -87,4 +87,4 @@ class BrusEngine(Cell):
             -ops.pow((wavelengths - wavelength_peak), 2) / (2 * ops.pow(self.sigma, 2))
         )
 
-        return absorption_coefficient
+        return absorption_coefficient, e_qd
