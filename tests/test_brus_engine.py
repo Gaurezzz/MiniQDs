@@ -6,7 +6,7 @@ from physics.BrusEngine import BrusEngine
 
 def load_material_data():
     """Load material properties from CSV file."""
-    df = pd.read_csv('tests/materiales.csv')
+    df = pd.read_csv('data/materials.csv')
     return df.to_dict(orient='records')
 
 class TestBrusEngineMaterials:
@@ -74,7 +74,7 @@ class TestBrusEngineMaterials:
 
     def test_csv_structure(self):
         """Verifies that the CSV file has all required columns."""
-        df = pd.read_csv('tests/materiales.csv')
+        df = pd.read_csv('data/materials.csv')
         required_columns = ['Material', 'Eg_0K_eV', 'Alpha_evK', 'Beta_K', 'me_eff', 'mh_eff', 'epsilon_r']
         for col in required_columns:
             assert col in df.columns, f"Missing critical column: {col}"

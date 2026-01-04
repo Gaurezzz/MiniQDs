@@ -23,7 +23,7 @@ class SolarPerformanceEvaluator(Cell):
             kappa (float): Penalty coefficient for current mismatch in the fitness function.
                            Controls how strictly the algorithm enforces current matching.
         """
-        super(SolarPerformanceEvaluator, self).__init__()
+        super().__init__()
 
         # --- Physical Constants & Control Parameters ---
         self.ENERGY_CONST = 1.9864e-16      # hc in J*m

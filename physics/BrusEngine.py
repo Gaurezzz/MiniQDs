@@ -34,7 +34,7 @@ class BrusEngine(Cell):
             eps_r (float): Relative dielectric constant of the material [dimensionless].
             max_absorption_coefficient (float): Peak absorption value [m^-1]. Default is 1e7.
         """
-        super(BrusEngine, self).__init__()
+        super().__init__()
         
         # Material properties
         self.bandgap = bandgap
