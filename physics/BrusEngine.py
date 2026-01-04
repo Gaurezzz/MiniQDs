@@ -66,11 +66,11 @@ class BrusEngine(Cell):
             ms.Tensor: Absorption coefficient profile [m^-1] for the given wavelength range.
         """
         
-        # 1. Varshni's Law: Temperature-dependent bandgap correction
+        # Varshni's Law: Temperature-dependent bandgap correction
         # Formula: Eg(T) = E0 - (alpha * T^2) / (T + beta)
         e_bulk = self.bandgap - (self.alpha * ops.pow(temperature, 2)) / (temperature + self.beta)
 
-        # 2. Brus Equation: Quantum confinement and Coulomb interaction (in eV and nm)
+        # Brus Equation: Quantum confinement and Coulomb interaction (in eV and nm)
         confinement = (self.BRUS_CONST / ops.pow(radius, 2)) * (1/self.me_eff + 1/self.mh_eff)
         
         # Coulomb term: decreases energy gap due to electron-hole attraction
@@ -79,10 +79,10 @@ class BrusEngine(Cell):
         # Total quantum dot energy gap [eV]
         e_qd = e_bulk + confinement - coulomb
 
-        # 3. Energy-to-Wavelength conversion: Peak absorption wavelength [nm]
+        # Energy-to-Wavelength conversion: Peak absorption wavelength [nm]
         wavelength_peak = 1239.84 / e_qd
 
-        # 4. Gaussian absorption profile: Models size distribution effects
+        # Gaussian absorption profile: Models size distribution effects
         absorption_coefficient = self.max_absorption_coefficient * ms.numpy.exp(
             -ops.pow((wavelengths - wavelength_peak), 2) / (2 * ops.pow(self.sigma, 2))
         )

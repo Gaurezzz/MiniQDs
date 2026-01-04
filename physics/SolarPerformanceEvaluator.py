@@ -65,27 +65,27 @@ class SolarPerformanceEvaluator(Cell):
             Tensor: Shape (Batch,). The calculated fitness score for each individual in the population.
         """
         
-        # 1. Calculate Short-Circuit Current (J_sc) for every layer
+        # Calculate Short-Circuit Current (J_sc) for every layer
         # We integrate over the wavelengths (axis=-1) to get the total current per layer.
         # Result shape: (Batch, Layers)
         j_layers = self.ELECTRON_CHARGE * (self.photon_flux * self.delta * absorption_coefficient).sum(axis=-1)
 
-        # 2. Calculate Open-Circuit Voltage (V_oc)
+        # Calculate Open-Circuit Voltage (V_oc)
         # Estimation: V_oc approx (E_g / q) - 0.4V loss.
         # For tandem cells in series, voltages add up. We sum across layers (axis=1).
         v_layers = e_qd - 0.4
         v_oc_total = v_layers.sum(axis=1)
 
-        # 3. Apply Current Matching Condition
+        # Apply Current Matching Condition
         # In a series connection, the total current is limited by the layer generating the least current.
         # We take the minimum across layers (axis=1).
         j_sc_limit = j_layers.min(axis=1)
 
-        # 4. Calculate Power Conversion Efficiency (PCE)
+        # Calculate Power Conversion Efficiency (PCE)
         # Eta = (J_sc * V_oc * FF) / P_in
         efficiency = (j_sc_limit * v_oc_total * self.FF) / self.p_sun
 
-        # 5. Calculate Current Mismatch Penalty
+        # Calculate Current Mismatch Penalty
         # We penalize designs where layers generate vastly different currents.
         # Uses vector slicing to compute sum(|J_i - J_{i+1}|) across layers.
         diff_j = ops.abs(j_layers[:, 1:] - j_layers[:, :-1]).sum(axis=1)

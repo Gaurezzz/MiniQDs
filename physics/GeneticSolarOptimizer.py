@@ -24,7 +24,7 @@ class GeneticSolarOptimizer(Cell):
         self.alpha = alpha
         self.mutation_strength = mutation_strength
         
-        # 1. Population Initialization: Random uniform distribution of radii
+        # Population Initialization: Random uniform distribution of radii
         # Shape: (population_size, num_layers)
         self.population = ms.Parameter(ops.uniform(
             (population_size, num_layers), 
@@ -37,7 +37,7 @@ class GeneticSolarOptimizer(Cell):
         absorption_list = []
         e_qd_list = []
 
-        # 2. Spectral Response Calculation: Map each engine to its corresponding layer
+        # Spectral Response Calculation: Map each engine to its corresponding layer
         for i, engine in enumerate(self.engines):
             # Extract radii for the specific layer [Batch, 1]
             radius_layer = self.population[:, i:i+1]
@@ -55,17 +55,17 @@ class GeneticSolarOptimizer(Cell):
         absortion_batch = ops.stack(absorption_list, axis=1)
         e_qd_batch = ops.stack(e_qd_list, axis=1).squeeze()
 
-        # 3. Fitness Evaluation: PCE - kappa * Sum(|Ji - Ji+1|)
+        # Fitness Evaluation: PCE - kappa * Sum(|Ji - Ji+1|)
         fitness_batch = self.evaluator(
             absorption_coefficient = absortion_batch,
             e_qd = e_qd_batch
         )
             
-        # 4. Elitism: Identify the best performing individual (Champion)
+        # Elitism: Identify the best performing individual (Champion)
         winner = fitness_batch.argmax()
         winner_radii = self.population[winner,:]
 
-        # 5. Tournament Selection: Pairwise competition
+        # Tournament Selection: Pairwise competition
         # Formula: Select Parent if Fitness(A) > Fitness(B)
         candidates = ops.randint(low=0, high=self.population.shape[0], size=(self.population.shape[0], 2), dtype=ms.int32)
         selected_parents_indices = ops.where(
@@ -75,18 +75,18 @@ class GeneticSolarOptimizer(Cell):
         )
         parents_radii = self.population[selected_parents_indices]
 
-        # 6. Arithmetic Crossover: Weighted average of parent genes
+        # Arithmetic Crossover: Weighted average of parent genes
         # Formula: Offspring = alpha * P1 + (1 - alpha) * P2
         p1 = parents_radii[:50, :]
         p2 = parents_radii[50:, :]
         offspring = self.alpha * p1 + (1 - self.alpha) * p2 
         
-        # 7. Gaussian Mutation: Stochastic search with boundary clipping
+        # Gaussian Mutation: Stochastic search with boundary clipping
         # Formula: R_new = Clip(R_old + N(0, sigma), r_min, r_max)
         offspring = offspring + ops.standard_normal(p1.shape) * self.mutation_strength
         offspring = ops.clip_by_value(offspring, self.r_min, self.r_max)
 
-        # 8. Generational Update: Combine Elite + Offspring + Survived Parents
+        # Generational Update: Combine Elite + Offspring + Survived Parents
         new_population = ops.concat((offspring, winner_radii.expand_dims(axis=0), parents_radii[:49]))
         ops.assign(self.population, new_population)
 
