@@ -37,7 +37,7 @@ class TestSolarPerformanceEvaluator:
         absorption = ms.Tensor(np.ones((1, 1, num_wavelengths)) * 0.8, ms.float32)  # 80% absorption
         e_qd = ms.Tensor([[1.5]], ms.float32)  # 1.5 eV bandgap
         
-        fitness = evaluator(absorption, e_qd)
+        fitness = evaluator(absorption, e_qd, evaluator.wavelengths)
         
         assert fitness.shape == (1,), "Fitness should have shape (batch_size,)"
         fitness_val = fitness.asnumpy().item()
@@ -58,11 +58,13 @@ class TestSolarPerformanceEvaluator:
         absorption = ms.Tensor(np.ones((1, 2, num_wavelengths)) * 0.7, ms.float32)
         e_qd = ms.Tensor([[1.8, 1.2]], ms.float32)  # Top: 1.8 eV, Bottom: 1.2 eV
         
-        fitness = evaluator(absorption, e_qd)
+        fitness = evaluator(absorption, e_qd, evaluator.wavelengths)
         
         fitness_val = fitness.asnumpy().item()
         assert not np.isnan(fitness_val), "Tandem fitness should not be NaN"
-        assert fitness_val > 0, f"Tandem fitness should be positive, got {fitness_val:.4f}"
+        assert not np.isinf(fitness_val), "Tandem fitness should not be Inf"
+        # Fitness can be negative due to mismatch penalty
+        assert -200 < fitness_val < 2.0, f"Fitness out of expected range, got {fitness_val:.4f}"
         
         print(f"Tandem cell: fitness={fitness_val:.4f}")
     
@@ -75,14 +77,14 @@ class TestSolarPerformanceEvaluator:
         # Matched currents: both layers absorb equally
         absorption_matched = ms.Tensor(np.ones((1, 2, num_wavelengths)) * 0.8, ms.float32)
         e_qd = ms.Tensor([[1.5, 1.5]], ms.float32)
-        fitness_matched = evaluator(absorption_matched, e_qd).asnumpy().item()
+        fitness_matched = evaluator(absorption_matched, e_qd, evaluator.wavelengths).asnumpy().item()
         
         # Mismatched currents: first layer absorbs more
         absorption_mismatched = ms.Tensor(np.concatenate([
             np.ones((1, 1, num_wavelengths)) * 0.9,
             np.ones((1, 1, num_wavelengths)) * 0.3
         ], axis=1), ms.float32)
-        fitness_mismatched = evaluator(absorption_mismatched, e_qd).asnumpy().item()
+        fitness_mismatched = evaluator(absorption_mismatched, e_qd, evaluator.wavelengths).asnumpy().item()
         
         assert fitness_matched > fitness_mismatched, \
             f"Matched currents should have higher fitness: {fitness_matched:.4f} vs {fitness_mismatched:.4f}"
@@ -101,7 +103,7 @@ class TestSolarPerformanceEvaluator:
         absorption = ms.Tensor(np.random.rand(batch_size, num_layers, num_wavelengths) * 0.8, ms.float32)
         e_qd = ms.Tensor(np.random.rand(batch_size, num_layers) * 1.5 + 1.0, ms.float32)
         
-        fitness = evaluator(absorption, e_qd)
+        fitness = evaluator(absorption, e_qd, evaluator.wavelengths)
         
         assert fitness.shape == (batch_size,), f"Expected shape ({batch_size},), got {fitness.shape}"
         fitness_np = fitness.asnumpy()
@@ -123,7 +125,7 @@ class TestSolarPerformanceEvaluator:
         e_qd_high = ms.Tensor([[1.8]], ms.float32)
         e_qd = ms.ops.concat([e_qd_low, e_qd_high], axis=0)
         
-        fitness = evaluator(absorption, e_qd)
+        fitness = evaluator(absorption, e_qd, evaluator.wavelengths)
         fitness_np = fitness.asnumpy()
         
         # Higher bandgap should give higher voltage (V_oc = E_g - 0.4)

@@ -58,7 +58,8 @@ class GeneticSolarOptimizer(Cell):
         # Fitness Evaluation: PCE - kappa * Sum(|Ji - Ji+1|)
         fitness_batch = self.evaluator(
             absorption_coefficient = absortion_batch,
-            e_qd = e_qd_batch
+            e_qd = e_qd_batch,
+            wavelengths = wavelength
         )
             
         # Elitism: Identify the best performing individual (Champion)
@@ -77,8 +78,11 @@ class GeneticSolarOptimizer(Cell):
 
         # Arithmetic Crossover: Weighted average of parent genes
         # Formula: Offspring = alpha * P1 + (1 - alpha) * P2
-        p1 = parents_radii[:50, :]
-        p2 = parents_radii[50:, :]
+        pop_size = self.population.shape[0]
+        half_pop = pop_size // 2
+        
+        p1 = parents_radii[:half_pop, :]
+        p2 = parents_radii[half_pop:half_pop*2, :]
         offspring = self.alpha * p1 + (1 - self.alpha) * p2 
         
         # Gaussian Mutation: Stochastic search with boundary clipping
@@ -87,7 +91,8 @@ class GeneticSolarOptimizer(Cell):
         offspring = ops.clip_by_value(offspring, self.r_min, self.r_max)
 
         # Generational Update: Combine Elite + Offspring + Survived Parents
-        new_population = ops.concat((offspring, winner_radii.expand_dims(axis=0), parents_radii[:49]))
+        survivors_count = pop_size - half_pop - 1  # Remaining slots after offspring and elite
+        new_population = ops.concat((offspring, winner_radii.expand_dims(axis=0), parents_radii[:survivors_count]))
         ops.assign(self.population, new_population)
 
         return fitness_batch[winner], winner_radii
