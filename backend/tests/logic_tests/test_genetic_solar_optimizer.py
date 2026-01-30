@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import mindspore as ms
-from physics.GeneticSolarOptimizer import GeneticSolarOptimizer
+from logic.GeneticSolarOptimizer import GeneticSolarOptimizer
 from physics.BrusEngine import BrusEngine
 
 class TestGeneticSolarOptimizer:
