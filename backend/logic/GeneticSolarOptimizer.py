@@ -1,3 +1,4 @@
+import mindspore_config 
 from mindspore.nn import Cell
 from mindspore import ops, Tensor, dtype
 from physics.SolarPerformanceEvaluator import SolarPerformanceEvaluator

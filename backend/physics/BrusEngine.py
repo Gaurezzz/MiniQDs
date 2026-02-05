@@ -1,3 +1,4 @@
+import mindspore_config 
 import mindspore as ms
 from mindspore.nn import Cell
 from mindspore import ops

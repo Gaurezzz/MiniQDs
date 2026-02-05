@@ -1,3 +1,4 @@
+import mindspore_config 
 import pandas as pd
 import mindspore as ms
 from physics.BrusEngine import BrusEngine
