@@ -1,7 +1,8 @@
+import mindspore_config 
 import pandas as pd
 import mindspore as ms
 from physics.BrusEngine import BrusEngine
-from physics.GeneticSolarOptimizer import GeneticSolarOptimizer
+from logic.GeneticSolarOptimizer import GeneticSolarOptimizer
 
 class SolarOptimizationManager:
     """

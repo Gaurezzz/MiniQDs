@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import mindspore as ms
-from physics.SolarOptimizationManager import SolarOptimizationManager
+from logic.SolarOptimizationManager import SolarOptimizationManager
 
 
 class TestSolarOptimizationManager:
@@ -9,7 +9,7 @@ class TestSolarOptimizationManager:
     @pytest.fixture
     def manager(self):
         """Creates a manager instance with the materials database."""
-        return SolarOptimizationManager('data/materials.csv')
+        return SolarOptimizationManager('db/materials.csv')
     
     def test_catalog_loading(self, manager):
         """Validates that the materials catalog is loaded correctly from CSV."""
