@@ -1,3 +1,6 @@
 [submodule "backend"]
 	path = backend
 	url = git@github.com:Gaurezzz/q-mind-backend.git
+[submodule "q-mind-frontend"]
+	path = q-mind-frontend
+	url = git@github.com:Gaurezzz/q-mind-frontend.git
